@@ -1,3 +1,5 @@
+import psycopg2
+
 class Node:
     def __init__(self, category_id, category_name):
         self.category_id = category_id
@@ -13,7 +15,7 @@ class Tree:
             current_node = current_node.children[category]
 
     def print_tree(node, depth=0):
-        print(f"{node.category_name}[{node.category_id}]")
+        print(f"{node.category_name}\n{node.category_id}")
         for child in node.children.values():
             Tree.print_tree(child, depth + 1)
 
@@ -33,10 +35,19 @@ class Produto:
         self.avgrating_reviews = 0
         self.reviews = []
     
-    def insere_no_bd(self):
-        # Consulta SQL
-        pass
+    def insere_no_bd(self, conexao):
+        
+        produto_inserido = f""" INSERT INTO produto VALUES ({self.id}, '{self.asin}', '{self.title}',
+        '{self.group}', {self.salesrank}, {self.similar_count}, {self.categories_count});
+        """
+        
+        conexao.cursor.execute(produto_inserido)
+        
+        print('produto inserido no banco!!!')
+        print(produto_inserido)
 
+
+        
     def printa(self):
         printado = "Produto: " + self.id + " " + self.asin
         print(printado)
@@ -137,16 +148,9 @@ def le_um_produto(file):
     
     # GUARDAR NO BANDO CADOS
     
-    
+    print(produto.id)
     if produto.id != None:
         produto.printa()
-        return True
+        return produto
     else:
-        return False
-
-txt = 'metinha.txt'     
-existe = True
-with open(txt, 'r') as file:
-    while(existe):
-        existe = le_um_produto(file)
-        print("###################################################################")
+        return None

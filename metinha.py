@@ -1,4 +1,5 @@
 import psycopg2
+from conduzir_metinha import *
 
 class ConexaoDB:
     def __init__(self, host='localhost', port='5432'):
@@ -33,6 +34,10 @@ class ConexaoDB:
             self.conn.close()
             
     def criar_banco(self, new_database):
+        '''self.cursor.execute("SHOW DATABASES LIKE 'amazon'")
+        resultado = self.cursor.fetchone()
+        if resultado:
+            self.cursor.execute("DROP TABLE amazon")'''
         sql_create_db = f'CREATE DATABASE {new_database};'
         self.cursor.execute(sql_create_db)
 
@@ -45,10 +50,10 @@ class GerenciadorDeTabelas:
         sql_create_table_produto = """
             CREATE TABLE produto (
                 id INT PRIMARY KEY,
-                asin CHAR(10) UNIQUE NOT NULL,
-                titulo VARCHAR(100) NOT NULL,
-                grupo VARCHAR(20) NOT NULL,
-                salesrank INT NOT NULL,
+                asin VARCHAR(15),
+                titulo VARCHAR(100),
+                grupo VARCHAR(20),
+                salesrank INT,
                 qtd_similares INT,
                 qtd_categorias INT
             );
@@ -60,7 +65,7 @@ class GerenciadorDeTabelas:
             CREATE TABLE similares (
                 id_similar SERIAL PRIMARY KEY,
                 id_produto_og INT REFERENCES produto(id),
-                asin_similar CHAR(10) NOT NULL
+                asin_similar CHAR(10) 
             );
         """
         self.conexao.cursor.execute(sql_create_table_similares)
@@ -108,49 +113,8 @@ class GerenciadorDeTabelas:
         self.criar_tabela_reviews()
         self.criar_tabela_info_reviews()
 
-class Arquivo:
-    def processar_arquivo(self):
-        with open('metinha.txt', 'r') as file:
-            lines = file.readlines()
-            for line in lines:
-                if (len(line.strip().split(':')) > 1):
-                    # não é uma categoria
-                    print(f'classes : {line}')
-                    if 'Id' in line:
-                        id = line.strip().split()[1] # peguei o id
-                        print('achei o id:', id)
-                        # vou guardar o id no banco de dados
-                    elif 'ASIN' in line:
-                        asin = line.strip().split()[1] # peguei o asin
-                        print('achei o asin:', asin)
-                        # vou guardar o asin no banco de dados
-                    elif 'title' in line:
-                        title = ' '.join(line.strip().split()[1:]) # peguei o título
-                        print('achei o título:', title)
-                        # vou guardar o título no banco de dados
-                    elif 'group' in line:
-                        group = ' '.join(line.strip().split()[1:])
-                        print('achei o grupo: ', group)
-                        # vou guardar o grupo no banco de dados
-                    elif 'salesrank' in line:
-                        salesrank = line.strip().split()[1]
-                        print('achei o salesrank: ', salesrank)
-                        # vou guardar o salesrank no banco de dados
-                        
-                else:
-                    # é uma categoria
-                    for categoria in list(line.strip().split('|')):
-                        if '[' in categoria and ']' in categoria:
-                            nome, numero = categoria.split('[')[0], categoria.split('[')[1].split(']')[0]
-                            print("Nome:", nome)
-                            print("Número:", numero)
-                print("nova linha") # colocar o id_arvore
-                    #     print (categoria)
-                    #     nome, numero = categoria.split('[')[0], categoria.split('[')[1].split(']')[0]
-                    #     print(nome, numero)
-            
-            
-    
+
+
 # Utilização das classes    
 conexao = ConexaoDB()
 
@@ -167,4 +131,14 @@ conexao.conectar()
 criador_tabelas = GerenciadorDeTabelas(conexao)
 criador_tabelas.criar_tabelas()
 
+txt = 'metinha.txt'     
+existe = True
+with open(txt, 'r') as file:
+    while(existe):
+        existe = le_um_produto(file)
+        print("###################################################################")
+        if (existe):
+            print('existe um produto!')
+            existe.insere_no_bd(conexao)
+        
 conexao.fechar_conexao()
