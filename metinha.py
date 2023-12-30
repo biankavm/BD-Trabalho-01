@@ -34,10 +34,6 @@ class ConexaoDB:
             self.conn.close()
             
     def criar_banco(self, new_database):
-        '''self.cursor.execute("SHOW DATABASES LIKE 'amazon'")
-        resultado = self.cursor.fetchone()
-        if resultado:
-            self.cursor.execute("DROP TABLE amazon")'''
         sql_create_db = f'CREATE DATABASE {new_database};'
         self.cursor.execute(sql_create_db)
 
@@ -132,13 +128,18 @@ criador_tabelas = GerenciadorDeTabelas(conexao)
 criador_tabelas.criar_tabelas()
 
 txt = 'metinha.txt'     
-existe = True
+existe = (False, False, None)
 with open(txt, 'r') as file:
-    while(existe):
+    file.readline()
+    file.readline()
+    file.readline()
+    while(not existe[0]):
         existe = le_um_produto(file)
-        print("###################################################################")
-        if (existe):
-            print('existe um produto!')
-            existe.insere_no_bd(conexao)
+        print(existe)
+
+        if (existe[1]):
+
+            existe[2].insere_no_bd(conexao)
+        
         
 conexao.fechar_conexao()

@@ -21,11 +21,11 @@ class Tree:
 
 class Produto:
     def __init__(self):
-        self.id = None
+        self.id = -1
         self.asin = ""
         self.title = ""
         self.group = ""
-        self.salesrank = ""
+        self.salesrank = 0
         self.similar_count = 0
         self.similar = []
         self.categories_count = 0
@@ -36,21 +36,17 @@ class Produto:
         self.reviews = []
     
     def insere_no_bd(self, conexao):
-        
+        print(self.id)
         produto_inserido = f""" INSERT INTO produto VALUES ({self.id}, '{self.asin}', '{self.title}',
         '{self.group}', {self.salesrank}, {self.similar_count}, {self.categories_count});
         """
         
         conexao.cursor.execute(produto_inserido)
-        
-        print('produto inserido no banco!!!')
-        print(produto_inserido)
-
-
-        
+             
     def printa(self):
-        printado = "Produto: " + self.id + " " + self.asin
-        print(printado)
+        #printado = "Produto: " + self.id + " " + self.asin
+        #print(printado)
+        pass
 
 class Review:
     def __init__(self):
@@ -64,42 +60,37 @@ def le_um_produto(file):
     produto = Produto()
 
     line = file.readline()
-    print("lendo")
+    print('a linha é:', line)
+    
+
     while ((line != "\n") and (line != '')):
-        #print(line.strip().split(':'))
         if (len(line.strip().split(':')) > 1):
             # não é uma categoria
             #print(f'classes : {line}')
             if 'Id' in line:
                 id = line.strip().split()[1] # peguei o id
                 produto.id = id
-                print('achei o id:', id)
                 # vou guardar o id no banco de dados
             elif 'ASIN' in line:
                 asin = line.strip().split()[1] # peguei o asin
                 produto.asin = asin
-                print('achei o asin:', asin)
                 # vou guardar o asin no banco de dados
+    
             elif 'title' in line:
                 title = ' '.join(line.strip().split()[1:]) # peguei o título
                 produto.title = title
-                print('achei o título:', title)
                 # vou guardar o título no banco de dados
             elif 'group' in line:
                 group = ' '.join(line.strip().split()[1:])
                 produto.group = group
-                print('achei o grupo: ', group)
                 # vou guardar o grupo no banco de dados
             elif 'salesrank' in line:
                 salesrank = line.strip().split()[1]
                 produto.salesrank = salesrank
-                print('achei o salesrank: ', salesrank)
                 # vou guardar o salesrank no banco de dados
             elif ('similar' == line.strip().split(':')[0]):
                 qtd_similares = line.strip().split()[1]
                 lista_similares = line.strip().split()[2:]
-                print('a quantidade de similares é:', qtd_similares)
-                print('os ids dos similares são: ', lista_similares)
             
             # primeira linha das reviews
             elif ('reviews' in line):
@@ -107,9 +98,6 @@ def le_um_produto(file):
                 total = reviews[2]
                 downloaded = reviews[4]
                 avg_rating = reviews[7]
-                print('total reviews:', total)
-                print('downloaded: ', downloaded)
-                print('avg: ', avg_rating)
             
             elif ("cutomer:" in line):
                 info_reviews = line.strip().split()
@@ -118,25 +106,19 @@ def le_um_produto(file):
                 rating = info_reviews[4]
                 votes = info_reviews[6]
                 helpful = info_reviews[8]
-                print(f'data:{data}, cutomer:{cutomer}, rating:{rating}, votes:{votes}, helpful:{helpful}')
                      
         else:
-            # é uma categoria
-            # TODO: MUDAR AS CONDIÇÕES PRA SER EXATAMENTE O FORMATO DE UM PRODUTO VÁLIDO
-            # E EVITAR GUARDAR COISAS ERRADO
-            # print(line.strip().split('|'))
-            '''if ('|' in line):
-                print("categoriaaaaaaaaaaaaaaaaaaa")
-                for categoria in list(line.strip().split('|')):
-                    if '[' in categoria and ']' in categoria:
-                        nome, numero = categoria.split('[')[0], categoria.split('[')[1].split(']')[0]'''
-            root = Node("", "")
-            categories = line.split('|')
-            for category in categories:
-                if '[' in category and ']' in category:
-                    nome, numero = category.split('[')[0], category.split('[')[1].split(']')[0]
-                    Tree.add_category(root, numero, nome)
-            Tree.print_tree(root)
+            if 'discontinued product' in line:
+                break
+            
+            elif ('|' in line):
+                root = Node("", "")
+                categories = line.split('|')
+                for category in categories:
+                    if '[' in category and ']' in category:
+                        nome, numero = category.split('[')[0], category.split('[')[1].split(']')[0]
+                        Tree.add_category(root, numero, nome)
+                #Tree.print_tree(root)
                     #print("Nome:", nome)
                     #print("Número:", numero)
         #print("nova linha") # colocar o id_arvore
@@ -148,9 +130,30 @@ def le_um_produto(file):
     
     # GUARDAR NO BANDO CADOS
     
-    print(produto.id)
-    if produto.id != None:
-        produto.printa()
-        return produto
+    #print(produto.id)
+    '''if (line == "\n"):
+        se_fim_do_arquivo = False
+        e_produto = False
+    elif (produto.id != -1):
+        se_fim_do_arquivo = False
+        e_produto = True
     else:
-        return None
+        print('deu errado pq entrei no else que nao devia')
+        se_fim_do_arquivo = True
+        e_produto = False
+    print(produto.id)
+    return (se_fim_do_arquivo, e_produto, produto)'''
+    
+    if (produto.id != -1):
+        print('é produto')
+        se_fim_do_arquivo = False
+        e_produto = True
+    elif (line == ""):
+        print('é barra n')
+        se_fim_do_arquivo = True
+        e_produto = False
+    else:
+        print('é outra coisa')
+        se_fim_do_arquivo = False
+        e_produto = False
+    return (se_fim_do_arquivo, e_produto, produto)
