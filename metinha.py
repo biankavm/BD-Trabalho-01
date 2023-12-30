@@ -50,8 +50,7 @@ class GerenciadorDeTabelas:
                 titulo VARCHAR(100),
                 grupo VARCHAR(20),
                 salesrank INT,
-                qtd_similares INT,
-                qtd_categorias INT
+                qtd_similares INT
             );
         """
         self.conexao.cursor.execute(sql_create_table_produto)
@@ -60,22 +59,31 @@ class GerenciadorDeTabelas:
         sql_create_table_similares = """
             CREATE TABLE similares (
                 id_similar SERIAL PRIMARY KEY,
-                id_produto_og INT REFERENCES produto(id),
-                asin_similar CHAR(10) 
+                id_produto_og INT,
+                asin_similar VARCHAR(15) 
             );
         """
         self.conexao.cursor.execute(sql_create_table_similares)
 
-    def criar_tabela_categorias(self):
-        sql_create_table_categorias = """
-        CREATE TABLE categorias (
-            id_produto INT REFERENCES produto(id),
-            id_arvore INT PRIMARY KEY,
-            id_categoria INT NOT NULL,
+    def criar_tabela_categorias_unicas(self):
+        sql_create_table_categorias_unicas = """
+        CREATE TABLE categorias_unicas (
+            id_original INT PRIMARY KEY,
             nome_categoria VARCHAR(100) NOT NULL
         );
         """
-        self.conexao.cursor.execute(sql_create_table_categorias)
+        self.conexao.cursor.execute(sql_create_table_categorias_unicas)
+        
+    def criar_tabela_categorias_produto(self):
+        sql_create_table_categorias_produto = """
+        CREATE TABLE categorias_produto (
+            id INT PRIMARY KEY,
+            id_produto INT REFERENCES produto(id),
+            id_categoria INT REFERENCES categorias_unicas(id_original),
+            id_arvore INT
+        );
+        """
+        self.conexao.cursor.execute(sql_create_table_categorias_produto)
         
     def criar_tabela_reviews(self):
         sql_create_table_reviews = """
@@ -105,7 +113,8 @@ class GerenciadorDeTabelas:
     def criar_tabelas(self):
         self.criar_tabela_produto()
         self.criar_tabela_similares()
-        self.criar_tabela_categorias()
+        self.criar_tabela_categorias_unicas()
+        self.criar_tabela_categorias_produto()
         self.criar_tabela_reviews()
         self.criar_tabela_info_reviews()
 
@@ -130,9 +139,7 @@ criador_tabelas.criar_tabelas()
 txt = 'metinha.txt'     
 existe = (False, False, None)
 with open(txt, 'r') as file:
-    file.readline()
-    file.readline()
-    file.readline()
+
     while(not existe[0]):
         existe = le_um_produto(file)
         print(existe)

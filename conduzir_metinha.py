@@ -1,24 +1,5 @@
 import psycopg2
 
-class Node:
-    def __init__(self, category_id, category_name):
-        self.category_id = category_id
-        self.category_name = category_name
-        self.children = {}
-
-class Tree:
-    def add_category(current_node, category_id, category_name):
-        categories = category_name.split('|')
-        for category in categories:
-            if category not in current_node.children:
-                current_node.children[category] = Node(category_id, category)
-            current_node = current_node.children[category]
-
-    def print_tree(node, depth=0):
-        print(f"{node.category_name}\n{node.category_id}")
-        for child in node.children.values():
-            Tree.print_tree(child, depth + 1)
-
 class Produto:
     def __init__(self):
         self.id = -1
@@ -27,7 +8,7 @@ class Produto:
         self.group = ""
         self.salesrank = 0
         self.similar_count = 0
-        self.similar = []
+        self.similares = []
         self.categories_count = 0
         self.categories = []
         self.total_reviews = 0
@@ -37,12 +18,30 @@ class Produto:
     
     def insere_no_bd(self, conexao):
         print(self.id)
-        produto_inserido = f""" INSERT INTO produto VALUES ({self.id}, '{self.asin}', '{self.title}',
-        '{self.group}', {self.salesrank}, {self.similar_count}, {self.categories_count});
-        """
+        print(self.similar_count)
         
+        produto_inserido = f""" INSERT INTO produto VALUES ({self.id}, '{self.asin}', '{self.title}',
+        '{self.group}', {self.salesrank}, {self.similar_count});
+        """
         conexao.cursor.execute(produto_inserido)
-             
+
+        similares_inseridos = ""
+        for sim in self.similares:
+            similares_inseridos = f" INSERT INTO similares (id_produto_og, asin_similar) VALUES ({self.id}, '{sim}')"
+            #similares_inseridos = f"INSERT INTO similares VALUES ({self.id}, '{sim}');"
+            conexao.cursor.execute(similares_inseridos)      
+            
+        categorias_unicas_inseridas = ""
+        for nome, id in self.categories:
+            existe = f"SELECT * FROM categorias_unicas WHERE id_original = {id}"
+            conexao.cursor.execute(existe)
+            res = conexao.cursor.fetchone()
+            if (not res):
+                categorias_unicas_inseridas = f"INSERT INTO categorias_unicas VALUES ({id}, '{nome}');"
+                conexao.cursor.execute(categorias_unicas_inseridas)
+            
+
+                   
     def printa(self):
         #printado = "Produto: " + self.id + " " + self.asin
         #print(printado)
@@ -91,6 +90,8 @@ def le_um_produto(file):
             elif ('similar' == line.strip().split(':')[0]):
                 qtd_similares = line.strip().split()[1]
                 lista_similares = line.strip().split()[2:]
+                produto.similar_count = qtd_similares
+                produto.similares = lista_similares
             
             # primeira linha das reviews
             elif ('reviews' in line):
@@ -112,19 +113,14 @@ def le_um_produto(file):
                 break
             
             elif ('|' in line):
-                root = Node("", "")
                 categories = line.split('|')
                 for category in categories:
                     if '[' in category and ']' in category:
                         nome, numero = category.split('[')[0], category.split('[')[1].split(']')[0]
-                        Tree.add_category(root, numero, nome)
-                #Tree.print_tree(root)
-                    #print("Nome:", nome)
-                    #print("Número:", numero)
-        #print("nova linha") # colocar o id_arvore
-            #     print (categoria)
-            #     nome, numero = categoria.split('[')[0], categoria.split('[')[1].split(']')[0]
-            #     print(nome, numero)
+                        produto.categories.append((nome, numero))
+
+
+               
         
         line = file.readline()
     
@@ -144,6 +140,7 @@ def le_um_produto(file):
     print(produto.id)
     return (se_fim_do_arquivo, e_produto, produto)'''
     
+    
     if (produto.id != -1):
         print('é produto')
         se_fim_do_arquivo = False
@@ -157,3 +154,4 @@ def le_um_produto(file):
         se_fim_do_arquivo = False
         e_produto = False
     return (se_fim_do_arquivo, e_produto, produto)
+
