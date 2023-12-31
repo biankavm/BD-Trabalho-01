@@ -11,6 +11,7 @@ class Produto:
         self.similares = []
         self.categories_count = 0
         self.categories = []
+        self.id_arvore = 1
         self.total_reviews = 0
         self.dowloaded_reviews = 0
         self.avgrating_reviews = 0
@@ -18,30 +19,44 @@ class Produto:
     
     def insere_no_bd(self, conexao):
         print(self.id)
-        print(self.similar_count)
+        print(self.categories_count, "\n",self.categories)
         
         produto_inserido = f""" INSERT INTO produto VALUES ({self.id}, '{self.asin}', '{self.title}',
-        '{self.group}', {self.salesrank}, {self.similar_count});
+        '{self.group}', {self.salesrank}, {self.similar_count}, {self.categories_count});
         """
         conexao.cursor.execute(produto_inserido)
 
         similares_inseridos = ""
         for sim in self.similares:
-            similares_inseridos = f" INSERT INTO similares (id_produto_og, asin_similar) VALUES ({self.id}, '{sim}')"
+            similares_inseridos = f""" INSERT INTO similares (id_produto_og, asin_similar) 
+                                    VALUES ({self.id}, '{sim}');"""
             #similares_inseridos = f"INSERT INTO similares VALUES ({self.id}, '{sim}');"
-            conexao.cursor.execute(similares_inseridos)      
+            conexao.cursor.execute(similares_inseridos)    
+              
             
-        categorias_unicas_inseridas = ""
-        for nome, id in self.categories:
+        categorias_unicas_inseridas = []
+        categorias_produtos_inseridas = []
+        for nome, id, id_arvore in self.categories:
             existe = f"SELECT * FROM categorias_unicas WHERE id_original = {id}"
             conexao.cursor.execute(existe)
             res = conexao.cursor.fetchone()
-            if (not res):
-                categorias_unicas_inseridas = f"INSERT INTO categorias_unicas VALUES ({id}, '{nome}');"
-                conexao.cursor.execute(categorias_unicas_inseridas)
             
+            if not res:
+                categorias_unicas_inseridas.append((id, nome))  # Armazenar para inserção em categorias_unicas
+            
+            categorias_produtos_inseridas.append((self.id, id, id_arvore))  # Armazenar para inserção em categorias_produto
+                
+        for id, nome in categorias_unicas_inseridas:
+            insert_query = f""" INSERT INTO categorias_unicas (id_original, nome_categoria) 
+            VALUES ({id}, '{nome}');        
+                """
+            conexao.cursor.execute(insert_query)
+        for id_produto, id_categoria, id_arvore in categorias_produtos_inseridas:
+            insert_query = f"INSERT INTO categorias_produto (id_produto, id_categoria, id_arvore) VALUES ({id_produto}, {id_categoria}, {id_arvore});"
+            conexao.cursor.execute(insert_query)
 
-                   
+                        
+                           
     def printa(self):
         #printado = "Produto: " + self.id + " " + self.asin
         #print(printado)
@@ -58,9 +73,7 @@ class Review:
 def le_um_produto(file):
     produto = Produto()
 
-    line = file.readline()
-    print('a linha é:', line)
-    
+    line = file.readline() 
 
     while ((line != "\n") and (line != '')):
         if (len(line.strip().split(':')) > 1):
@@ -117,41 +130,22 @@ def le_um_produto(file):
                 for category in categories:
                     if '[' in category and ']' in category:
                         nome, numero = category.split('[')[0], category.split('[')[1].split(']')[0]
-                        produto.categories.append((nome, numero))
-
-
-               
-        
+                        produto.categories.append((nome, numero, produto.id_arvore))
+                produto.id_arvore += 1
+                produto.categories_count += 1
+                
         line = file.readline()
     
-    # GUARDAR NO BANDO CADOS
-    
-    #print(produto.id)
-    '''if (line == "\n"):
-        se_fim_do_arquivo = False
-        e_produto = False
-    elif (produto.id != -1):
-        se_fim_do_arquivo = False
-        e_produto = True
-    else:
-        print('deu errado pq entrei no else que nao devia')
-        se_fim_do_arquivo = True
-        e_produto = False
-    print(produto.id)
-    return (se_fim_do_arquivo, e_produto, produto)'''
-    
-    
     if (produto.id != -1):
-        print('é produto')
         se_fim_do_arquivo = False
         e_produto = True
     elif (line == ""):
-        print('é barra n')
         se_fim_do_arquivo = True
         e_produto = False
     else:
-        print('é outra coisa')
         se_fim_do_arquivo = False
         e_produto = False
     return (se_fim_do_arquivo, e_produto, produto)
+
+
 

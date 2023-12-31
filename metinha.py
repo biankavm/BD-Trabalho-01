@@ -50,7 +50,8 @@ class GerenciadorDeTabelas:
                 titulo VARCHAR(100),
                 grupo VARCHAR(20),
                 salesrank INT,
-                qtd_similares INT
+                qtd_similares INT,
+                qtd_categorias INT
             );
         """
         self.conexao.cursor.execute(sql_create_table_produto)
@@ -68,7 +69,8 @@ class GerenciadorDeTabelas:
     def criar_tabela_categorias_unicas(self):
         sql_create_table_categorias_unicas = """
         CREATE TABLE categorias_unicas (
-            id_original INT PRIMARY KEY,
+            id_unico SERIAL ,
+            id_original INT,
             nome_categoria VARCHAR(100) NOT NULL
         );
         """
@@ -77,9 +79,9 @@ class GerenciadorDeTabelas:
     def criar_tabela_categorias_produto(self):
         sql_create_table_categorias_produto = """
         CREATE TABLE categorias_produto (
-            id INT PRIMARY KEY,
-            id_produto INT REFERENCES produto(id),
-            id_categoria INT REFERENCES categorias_unicas(id_original),
+            id SERIAL PRIMARY KEY,
+            id_produto INT,
+            id_categoria INT,
             id_arvore INT
         );
         """
@@ -118,8 +120,6 @@ class GerenciadorDeTabelas:
         self.criar_tabela_reviews()
         self.criar_tabela_info_reviews()
 
-
-
 # Utilização das classes    
 conexao = ConexaoDB()
 
@@ -142,11 +142,9 @@ with open(txt, 'r') as file:
 
     while(not existe[0]):
         existe = le_um_produto(file)
-        print(existe)
 
         if (existe[1]):
 
             existe[2].insere_no_bd(conexao)
-        
-        
+          
 conexao.fechar_conexao()
