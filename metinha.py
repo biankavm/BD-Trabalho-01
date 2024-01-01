@@ -98,7 +98,6 @@ class GerenciadorDeTabelas:
         """
         self.conexao.cursor.execute(sql_create_table_reviews)
 
-
     def criar_tabela_info_reviews(self):
         sql_create_table_info_reviews = """
         CREATE TABLE info_reviews (
@@ -146,5 +145,6 @@ with open(txt, 'r') as file:
         if (existe[1]):
 
             existe[2].insere_no_bd(conexao)
-          
+        
 conexao.fechar_conexao()
+

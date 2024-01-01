@@ -32,8 +32,7 @@ class Produto:
                                     VALUES ({self.id}, '{sim}');"""
             #similares_inseridos = f"INSERT INTO similares VALUES ({self.id}, '{sim}');"
             conexao.cursor.execute(similares_inseridos)    
-              
-            
+                    
         categorias_unicas_inseridas = []
         categorias_produtos_inseridas = []
         for nome, id, id_arvore in self.categories:
@@ -54,9 +53,18 @@ class Produto:
         for id_produto, id_categoria, id_arvore in categorias_produtos_inseridas:
             insert_query = f"INSERT INTO categorias_produto (id_produto, id_categoria, id_arvore) VALUES ({id_produto}, {id_categoria}, {id_arvore});"
             conexao.cursor.execute(insert_query)
-
-                        
-                           
+            
+        reviews_inseridas = f""" INSERT INTO reviews VALUES ({self.id}, {self.total_reviews}, 
+        {self.dowloaded_reviews}, {self.avgrating_reviews});
+        """
+        conexao.cursor.execute(reviews_inseridas)
+        
+        for data, cutomer, rating, votes, helpful in self.reviews:
+            insert_query = f"""INSERT INTO info_reviews VALUES ({self.id}, '{data}', '{cutomer}', {rating}, {votes},
+            {helpful});
+            """
+            conexao.cursor.execute(insert_query)
+                                    
     def printa(self):
         #printado = "Produto: " + self.id + " " + self.asin
         #print(printado)
@@ -73,7 +81,7 @@ class Review:
 def le_um_produto(file):
     produto = Produto()
 
-    line = file.readline() 
+    line = file.readline()
 
     while ((line != "\n") and (line != '')):
         if (len(line.strip().split(':')) > 1):
@@ -112,6 +120,10 @@ def le_um_produto(file):
                 total = reviews[2]
                 downloaded = reviews[4]
                 avg_rating = reviews[7]
+                produto.total_reviews = total
+                produto.dowloaded_reviews = downloaded
+                produto.avgrating_reviews = avg_rating
+                print('reviews: ', total, downloaded, avg_rating)
             
             elif ("cutomer:" in line):
                 info_reviews = line.strip().split()
@@ -120,6 +132,8 @@ def le_um_produto(file):
                 rating = info_reviews[4]
                 votes = info_reviews[6]
                 helpful = info_reviews[8]
+                produto.reviews.append((data, cutomer, rating, votes, helpful))
+                print(produto.reviews)
                      
         else:
             if 'discontinued product' in line:
@@ -133,7 +147,7 @@ def le_um_produto(file):
                         produto.categories.append((nome, numero, produto.id_arvore))
                 produto.id_arvore += 1
                 produto.categories_count += 1
-                
+     
         line = file.readline()
     
     if (produto.id != -1):
