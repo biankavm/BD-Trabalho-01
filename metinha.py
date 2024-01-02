@@ -127,9 +127,9 @@ conexao.conectar()
 criador_tabelas = GerenciadorDeTabelas(conexao)
 criador_tabelas.criar_tabelas()
 
-txt = 'meio-meta.txt'     
+txt = 'amazon-meta.txt'     
 existe = (False, False, None)
-with open(txt, 'r') as file:
+with open(txt, 'r', encoding='utf-8') as file:
 
     while(not existe[0]):
         existe = le_um_produto(file)
