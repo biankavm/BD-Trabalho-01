@@ -83,7 +83,7 @@ class GerenciadorDeTabelas:
         sql_create_table_categorias_produto = """
         CREATE TABLE categorias_produto (
             id_cat_prod SERIAL PRIMARY KEY,
-            id_produto INT,
+            id_produto INT REFERENCES produto(id),
             id_categoria INT,
             id_arvore INT
         );

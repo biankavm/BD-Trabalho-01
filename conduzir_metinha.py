@@ -47,21 +47,21 @@ class Produto:
         categorias_unicas_inseridas = []
         categorias_produtos_inseridas = []
         for nome, id, id_arvore in self.categories:
+            nome = nome.replace("'", "''") 
             existe = f"SELECT * FROM categorias_unicas WHERE id_original = {id}"
             conexao.cursor.execute(existe)
             res = conexao.cursor.fetchone()
             
             if not res:
-                categorias_unicas_inseridas.append((id, nome))  # Armazenar para inserção em categorias_unicas
-            
-            categorias_produtos_inseridas.append((self.id, id, id_arvore))  # Armazenar para inserção em categorias_produto
-                
-        for id, nome in categorias_unicas_inseridas:
-            nome = nome.replace("'", "''") 
-            insert_query = f""" INSERT INTO categorias_unicas (id_original, nome_categoria) 
+                categorias_unicas_inseridas.append((id, nome))  
+                nome = nome.replace("'", "''") 
+                insert_query = f""" INSERT INTO categorias_unicas (id_original, nome_categoria) 
             VALUES ({id}, '{nome}');        
                 """
-            conexao.cursor.execute(insert_query)
+                conexao.cursor.execute(insert_query)
+
+            categorias_produtos_inseridas.append((self.id, id, id_arvore))  # Armazenar para inserção em categorias_produto
+                
         for id_produto, id_categoria, id_arvore in categorias_produtos_inseridas:
             insert_query = f"""INSERT INTO categorias_produto (id_produto, id_categoria, id_arvore) 
             VALUES ({id_produto}, {id_categoria}, {id_arvore});"""
@@ -96,20 +96,20 @@ def le_um_produto(file):
                 
                 produto.id = id
                 # vou guardar o id no banco de dados
-            elif 'ASIN' in line:
+            elif line[0:5] == "ASIN:":
                 asin = line.strip().split()[1] # peguei o asin
                 produto.asin = asin
                 # vou guardar o asin no banco de dados
     
-            elif 'title' in line:
+            elif line[0:8] == "  title:":
                 title = ' '.join(line.strip().split()[1:]) # peguei o título
                 produto.title = title
                 # vou guardar o título no banco de dados
-            elif 'group' in line:
+            elif line[0:8] == "  group:":
                 group = ' '.join(line.strip().split()[1:])
                 produto.group = group
                 # vou guardar o grupo no banco de dados
-            elif 'salesrank' in line:
+            elif line[0:12] == "  salesrank:":
                 salesrank = line.strip().split()[1]
                 produto.salesrank = salesrank
                 # vou guardar o salesrank no banco de dados
@@ -120,7 +120,7 @@ def le_um_produto(file):
                 produto.similares = lista_similares
             
             # primeira linha das reviews
-            elif ('reviews' in line):
+            elif (line[0:10] == "  reviews:"):
                 reviews = line.strip().split()
                 total = reviews[2]
                 downloaded = reviews[4]
@@ -141,12 +141,17 @@ def le_um_produto(file):
         else:
             if 'discontinued product' in line:
                 break
-            
+
             elif ('|' in line):
                 categories = line.split('|')
                 for category in categories:
                     if '[' in category and ']' in category:
-                        nome, numero = category.split('[')[0], category.split('[')[1].split(']')[0]
+                        # pega tudo que vem antes do último [
+                        nome = "[".join(category.split('[')[0:-1])
+
+                        # pega a última string depois do [
+                        numero = "".join(category.split('[')[-1][0:-1].split(']'))
+
                         produto.categories.append((nome, numero, produto.id_arvore))
                 produto.id_arvore += 1
                 produto.categories_count += 1
