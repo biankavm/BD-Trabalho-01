@@ -19,11 +19,22 @@ class Produto:
     
     def insere_no_bd(self, conexao):
         print(self.id)
-        print(self.categories_count, "\n",self.categories)
+        print('ESSE É O TÍTULOOOOOO: ', self.title)
         
-        produto_inserido = f""" INSERT INTO produto VALUES ({self.id}, '{self.asin}', '{self.title}',
-        '{self.group}', {self.salesrank}, {self.similar_count}, {self.categories_count});
-        """
+        self.title = self.title.replace("'", "''") 
+        
+        produto_inserido = ""
+        if self.title == "":
+            produto_inserido = f""" INSERT INTO produto VALUES ({self.id}, '{self.asin}', null,
+            null, {self.salesrank}, {self.similar_count}, {self.categories_count}, {self.total_reviews},
+            {self.dowloaded_reviews}, {self.avgrating_reviews});;
+            """
+        else:
+            produto_inserido = f""" INSERT INTO produto VALUES ({self.id}, '{self.asin}', '{self.title}',
+            '{self.group}', {self.salesrank}, {self.similar_count}, {self.categories_count}, {self.total_reviews},
+            {self.dowloaded_reviews}, {self.avgrating_reviews});;
+            """
+        print('PRODUTO INSERIDO: ', produto_inserido)
         conexao.cursor.execute(produto_inserido)
 
         similares_inseridos = ""
@@ -46,30 +57,23 @@ class Produto:
             categorias_produtos_inseridas.append((self.id, id, id_arvore))  # Armazenar para inserção em categorias_produto
                 
         for id, nome in categorias_unicas_inseridas:
+            nome = nome.replace("'", "''") 
             insert_query = f""" INSERT INTO categorias_unicas (id_original, nome_categoria) 
             VALUES ({id}, '{nome}');        
                 """
             conexao.cursor.execute(insert_query)
         for id_produto, id_categoria, id_arvore in categorias_produtos_inseridas:
-            insert_query = f"INSERT INTO categorias_produto (id_produto, id_categoria, id_arvore) VALUES ({id_produto}, {id_categoria}, {id_arvore});"
+            insert_query = f"""INSERT INTO categorias_produto (id_produto, id_categoria, id_arvore) 
+            VALUES ({id_produto}, {id_categoria}, {id_arvore});"""
             conexao.cursor.execute(insert_query)
-            
-        reviews_inseridas = f""" INSERT INTO reviews VALUES ({self.id}, {self.total_reviews}, 
-        {self.dowloaded_reviews}, {self.avgrating_reviews});
-        """
-        conexao.cursor.execute(reviews_inseridas)
         
         for data, cutomer, rating, votes, helpful in self.reviews:
-            insert_query = f"""INSERT INTO info_reviews VALUES ({self.id}, '{data}', '{cutomer}', {rating}, {votes},
+            insert_query = f"""INSERT INTO reviews (id_produto, data, cutomer, rating, votes, helpful) 
+            VALUES ({self.id}, '{data}', '{cutomer}', {rating}, {votes},
             {helpful});
             """
             conexao.cursor.execute(insert_query)
-                                    
-    def printa(self):
-        #printado = "Produto: " + self.id + " " + self.asin
-        #print(printado)
-        pass
-
+                                
 class Review:
     def __init__(self):
         self.date = None
@@ -87,8 +91,9 @@ def le_um_produto(file):
         if (len(line.strip().split(':')) > 1):
             # não é uma categoria
             #print(f'classes : {line}')
-            if 'Id' in line:
+            if line[0:3] == "Id:":
                 id = line.strip().split()[1] # peguei o id
+                
                 produto.id = id
                 # vou guardar o id no banco de dados
             elif 'ASIN' in line:
@@ -123,7 +128,6 @@ def le_um_produto(file):
                 produto.total_reviews = total
                 produto.dowloaded_reviews = downloaded
                 produto.avgrating_reviews = avg_rating
-                print('reviews: ', total, downloaded, avg_rating)
             
             elif ("cutomer:" in line):
                 info_reviews = line.strip().split()
@@ -133,7 +137,6 @@ def le_um_produto(file):
                 votes = info_reviews[6]
                 helpful = info_reviews[8]
                 produto.reviews.append((data, cutomer, rating, votes, helpful))
-                print(produto.reviews)
                      
         else:
             if 'discontinued product' in line:
@@ -160,6 +163,4 @@ def le_um_produto(file):
         se_fim_do_arquivo = False
         e_produto = False
     return (se_fim_do_arquivo, e_produto, produto)
-
-
 

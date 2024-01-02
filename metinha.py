@@ -47,11 +47,14 @@ class GerenciadorDeTabelas:
             CREATE TABLE produto (
                 id INT PRIMARY KEY,
                 asin VARCHAR(15),
-                titulo VARCHAR(100),
+                titulo VARCHAR(300),
                 grupo VARCHAR(20),
                 salesrank INT,
                 qtd_similares INT,
-                qtd_categorias INT
+                qtd_categorias INT,
+                total INT,
+                downloaded INT,
+                avg_rating FLOAT(1)
             );
         """
         self.conexao.cursor.execute(sql_create_table_produto)
@@ -60,7 +63,7 @@ class GerenciadorDeTabelas:
         sql_create_table_similares = """
             CREATE TABLE similares (
                 id_similar SERIAL PRIMARY KEY,
-                id_produto_og INT,
+                id_produto_og INT REFERENCES produto(id),
                 asin_similar VARCHAR(15) 
             );
         """
@@ -69,7 +72,7 @@ class GerenciadorDeTabelas:
     def criar_tabela_categorias_unicas(self):
         sql_create_table_categorias_unicas = """
         CREATE TABLE categorias_unicas (
-            id_unico SERIAL ,
+            id_unico SERIAL,
             id_original INT,
             nome_categoria VARCHAR(100) NOT NULL
         );
@@ -79,28 +82,18 @@ class GerenciadorDeTabelas:
     def criar_tabela_categorias_produto(self):
         sql_create_table_categorias_produto = """
         CREATE TABLE categorias_produto (
-            id SERIAL PRIMARY KEY,
+            id_cat_prod SERIAL PRIMARY KEY,
             id_produto INT,
             id_categoria INT,
             id_arvore INT
         );
         """
         self.conexao.cursor.execute(sql_create_table_categorias_produto)
-        
+
     def criar_tabela_reviews(self):
         sql_create_table_reviews = """
         CREATE TABLE reviews (
-            id_produto INT REFERENCES produto(id),
-            total INT NOT NULL,
-            downloaded INT NOT NULL,
-            avg_rating FLOAT(1) NOT NULL
-        );  
-        """
-        self.conexao.cursor.execute(sql_create_table_reviews)
-
-    def criar_tabela_info_reviews(self):
-        sql_create_table_info_reviews = """
-        CREATE TABLE info_reviews (
+            id_review SERIAL PRIMARY KEY,
             id_produto INT REFERENCES produto(id),
             data DATE NOT NULL,
             cutomer VARCHAR(20) NOT NULL,
@@ -109,7 +102,7 @@ class GerenciadorDeTabelas:
             helpful INT NOT NULL
         );
         """
-        self.conexao.cursor.execute(sql_create_table_info_reviews)
+        self.conexao.cursor.execute(sql_create_table_reviews)
 
     def criar_tabelas(self):
         self.criar_tabela_produto()
@@ -117,7 +110,6 @@ class GerenciadorDeTabelas:
         self.criar_tabela_categorias_unicas()
         self.criar_tabela_categorias_produto()
         self.criar_tabela_reviews()
-        self.criar_tabela_info_reviews()
 
 # Utilização das classes    
 conexao = ConexaoDB()
@@ -135,7 +127,7 @@ conexao.conectar()
 criador_tabelas = GerenciadorDeTabelas(conexao)
 criador_tabelas.criar_tabelas()
 
-txt = 'metinha.txt'     
+txt = 'meio-meta.txt'     
 existe = (False, False, None)
 with open(txt, 'r') as file:
 
@@ -147,4 +139,3 @@ with open(txt, 'r') as file:
             existe[2].insere_no_bd(conexao)
         
 conexao.fechar_conexao()
-
